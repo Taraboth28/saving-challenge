@@ -53,6 +53,17 @@ class GoalController extends Controller
 
         $goal = $this->storage->create('goals', $data);
 
+        $initialSaved = (float) ($goal['saved_amount'] ?? 0);
+        if ($initialSaved > 0) {
+            $this->storage->create('history', [
+                'goal_id' => $goal['id'],
+                'amount' => $initialSaved,
+                'type' => 'deposit',
+                'note' => 'Initial deposit',
+                'date' => now()->toIso8601String(),
+            ]);
+        }
+
         return response()->json([
             'message' => 'Goal created successfully.',
             'data' => $this->withComputed($goal),
@@ -89,9 +100,9 @@ class GoalController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:100',
             'description' => 'nullable|string|max:500',
-            'target_amount' => 'sometimes|numeric|min:1',
-            'saved_amount' => 'sometimes|numeric|min:0',
-            'deadline' => 'sometimes|date',
+            'target_amount' => 'sometimes|nullable|numeric|min:1',
+            'saved_amount' => 'sometimes|nullable|numeric|min:0',
+            'deadline' => 'sometimes|nullable|date',
             'currency' => 'nullable|in:USD,KHR',
             'color' => 'nullable|string|max:20',
             'icon' => 'nullable|string|max:50',
@@ -137,7 +148,7 @@ class GoalController extends Controller
         $remaining = max(0, $target - $saved);
         $percent = $target > 0 ? round(($saved / $target) * 100, 2) : 0;
 
-        $deadline = isset($goal['deadline']) ? Carbon::parse($goal['deadline']) : null;
+        $deadline = ! empty($goal['deadline']) ? Carbon::parse($goal['deadline']) : null;
         $remainingDays = $deadline ? max(0, (int) now()->startOfDay()->diffInDays($deadline->startOfDay(), false)) : null;
 
         // Required daily / weekly / monthly savings
@@ -146,13 +157,13 @@ class GoalController extends Controller
         $requiredMonthly = $requiredDaily !== null ? round($requiredDaily * 30, 2) : null;
 
         return array_merge($goal, [
-            'remaining_amount' => $remaining,
+            'remaining_amount' => round($remaining, 2),
             'percentage' => $percent,
             'remaining_days' => $remainingDays,
             'required_daily' => $requiredDaily,
             'required_weekly' => $requiredWeekly,
             'required_monthly' => $requiredMonthly,
-            'is_completed' => $saved >= $target,
+            'is_completed' => $target > 0 && $saved >= $target,
         ]);
     }
 }

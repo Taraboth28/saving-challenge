@@ -163,7 +163,8 @@ const result = ref(null);
 const minDate = computed(() => {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().split('T')[0];
+  const pad = (v) => String(v).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 });
 
 const currencies = [
@@ -194,20 +195,22 @@ function calculate() {
   const saved  = form.value.saved ?? 0;
   const deadline = form.value.deadline;
 
-  if (!target || !deadline) return;
+  if (!target || target <= 0 || !deadline) {
+    result.value = null;
+    return;
+  }
 
   const remaining = Math.max(0, target - saved);
   const percentage = target > 0 ? Math.round((saved / target) * 100 * 100) / 100 : 0;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const end = new Date(deadline);
-  end.setHours(0, 0, 0, 0);
+  const end = new Date(`${deadline}T00:00:00`);
   const days = Math.max(0, Math.round((end - today) / (1000 * 60 * 60 * 24)));
 
-  const daily   = days > 0 ? Math.ceil(remaining / days * 100) / 100 : null;
-  const weekly  = daily !== null ? Math.ceil(daily * 7 * 100) / 100 : null;
-  const monthly = daily !== null ? Math.ceil(daily * 30 * 100) / 100 : null;
+  const daily   = days > 0 ? Math.ceil(remaining / days * 100) / 100 : (remaining > 0 ? remaining : 0);
+  const weekly  = days > 0 ? Math.ceil(Math.min(remaining, daily * 7) * 100) / 100 : (remaining > 0 ? remaining : 0);
+  const monthly = days > 0 ? Math.ceil(Math.min(remaining, daily * 30) * 100) / 100 : (remaining > 0 ? remaining : 0);
 
   result.value = {
     remaining, percentage, days,

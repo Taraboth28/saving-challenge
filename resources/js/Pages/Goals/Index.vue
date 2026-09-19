@@ -18,8 +18,8 @@
     <div class="glass rounded-2xl p-4 mb-6 animate-fade-in flex flex-wrap gap-3 items-center">
       <input v-model="search" type="text" placeholder="Search goals..."
              class="input-dark flex-1 min-w-40 !py-2 text-sm" />
-      <SelectMenu v-model="filterStatus" class="w-36" :options="statusOptions" />
-      <SelectMenu v-model="sortBy" class="w-40" :options="sortOptions" />
+      <SelectMenu v-model="filterStatus" class="w-44" :options="statusOptions" />
+      <SelectMenu v-model="sortBy" class="w-44" :options="sortOptions" />
     </div>
 
     <!-- Loading -->
@@ -35,10 +35,13 @@
         {{ goals.length ? 'No matching goals' : 'No goals yet' }}
       </h3>
       <p class="text-slate-400 text-sm mb-5">
-        {{ goals.length ? 'Try adjusting your filters.' : 'Create your first saving goal to get started!' }}
+        {{ goals.length ? (filterStatus !== 'all' ? `No goals found with '${selectedStatusLabel}' status.` : 'Try adjusting your search or filters.') : 'Create your first saving goal to get started!' }}
       </p>
       <button v-if="!goals.length" @click="openCreate" class="btn-primary">
         Create First Goal
+      </button>
+      <button v-else @click="resetFilters" class="btn-secondary">
+        Reset Filters
       </button>
     </div>
 
@@ -109,6 +112,8 @@ const sortOptions = [
   { value: 'percentage', label: 'Progress' },
   { value: 'remaining_amount', label: 'Remaining' },
 ];
+
+const selectedStatusLabel = computed(() => statusOptions.find(o => o.value === filterStatus.value)?.label ?? '');
 
 onMounted(refresh);
 

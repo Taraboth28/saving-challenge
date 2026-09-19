@@ -76,7 +76,7 @@
               <label class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
                   Deadline
               </label>
-              <input v-model="form.deadline" type="date" :min="minDate" class="input-dark" />
+              <input v-model="form.deadline" type="date" :min="isEditing ? undefined : minDate" class="input-dark" />
               <p v-if="errors.deadline" class="text-red-400 text-xs mt-1">{{ errors.deadline[0] }}</p>
             </div>
 
@@ -154,7 +154,8 @@ const loading = ref(false);
 const minDate = computed(() => {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().split('T')[0];
+  const pad = (v) => String(v).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 });
 
 watch(() => props.editGoal, (goal) => {

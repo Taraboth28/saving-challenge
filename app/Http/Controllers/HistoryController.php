@@ -88,6 +88,7 @@ class HistoryController extends Controller
         $newSaved = $validated['type'] === 'deposit'
             ? $currentSaved + $amount
             : max(0, $currentSaved - $amount);
+        $newSaved = round($newSaved, 2);
 
         $this->storage->update('goals', $goalId, ['saved_amount' => $newSaved]);
 
@@ -115,6 +116,7 @@ class HistoryController extends Controller
             $newSaved = $entry['type'] === 'deposit'
                 ? max(0, $currentSaved - $amount)
                 : $currentSaved + $amount;
+            $newSaved = round($newSaved, 2);
 
             $this->storage->update('goals', $goal['id'], ['saved_amount' => $newSaved]);
         }

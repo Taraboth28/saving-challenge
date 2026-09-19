@@ -8,15 +8,15 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
       <div class="glass rounded-2xl p-5">
         <p class="text-xs uppercase tracking-wider text-slate-400 mb-1">Total Deposits</p>
-        <p class="text-2xl font-bold text-emerald-400">{{ formatCurrency(totalDeposits) }}</p>
+        <p class="text-2xl font-bold text-emerald-400">{{ formatCurrency(totalDeposits, activeCurrency) }}</p>
       </div>
       <div class="glass rounded-2xl p-5">
         <p class="text-xs uppercase tracking-wider text-slate-400 mb-1">Total Withdrawals</p>
-        <p class="text-2xl font-bold text-rose-400">{{ formatCurrency(totalWithdrawals) }}</p>
+        <p class="text-2xl font-bold text-rose-400">{{ formatCurrency(totalWithdrawals, activeCurrency) }}</p>
       </div>
       <div class="glass rounded-2xl p-5">
         <p class="text-xs uppercase tracking-wider text-slate-400 mb-1">Net Savings</p>
-        <p class="text-2xl font-bold text-white">{{ formatCurrency(totalDeposits - totalWithdrawals) }}</p>
+        <p class="text-2xl font-bold text-white">{{ formatCurrency(totalDeposits - totalWithdrawals, activeCurrency) }}</p>
       </div>
     </div>
 
@@ -93,6 +93,13 @@ const goalOptions = computed(() => [
   { value: 'all', label: 'All Goals' },
   ...goals.value.map(goal => ({ value: goal, label: goal })),
 ]);
+const activeCurrency = computed(() => {
+  if (goalFilter.value !== 'all') {
+    const match = transactions.value.find(t => t.goal_name === goalFilter.value);
+    if (match?.currency) return match.currency;
+  }
+  return 'USD';
+});
 const filteredTransactions = computed(() => transactions.value
   .filter((transaction) => {
   const matchesType = typeFilter.value === 'all' || transaction.type === typeFilter.value;
@@ -108,14 +115,22 @@ const totalWithdrawals = computed(() => sumByType('withdrawal'));
 
 function sumByType(type) {
   return transactions.value
-    .filter(transaction => transaction.type === type)
+    .filter(transaction => {
+      const matchesType = transaction.type === type;
+      const matchesGoal = goalFilter.value === 'all' || transaction.goal_name === goalFilter.value;
+      return matchesType && matchesGoal;
+    })
     .reduce((total, transaction) => total + Number(transaction.amount || 0), 0);
 }
 function formatCurrency(amount, currency = 'USD') {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount || 0);
 }
 function formatDate(date) {
-  return new Date(date).toLocaleString('en-US', {
+  if (!date) return '—';
+  const normalized = String(date).includes('T') ? date : `${date}T00:00:00`;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return String(date);
+  return d.toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
   });
 }

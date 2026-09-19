@@ -104,7 +104,7 @@
             </div>
           </div>
           <p class="text-xs text-slate-500 mt-3">
-            Deadline: {{ goal.deadline ? new Date(goal.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not set' }}
+            Deadline: {{ formatDeadline(goal.deadline) }}
           </p>
         </div>
 
@@ -161,7 +161,7 @@
               <tr v-for="entry in history" :key="entry.id"
                   class="hover:bg-white/2 transition-colors group">
                 <td class="py-3 text-slate-300">
-                  {{ new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+                  {{ formatDate(entry.date) }}
                 </td>
                 <td class="py-3">
                   <span :class="entry.type === 'deposit' ? 'badge-emerald' : 'badge-rose'" class="badge">
@@ -239,6 +239,22 @@ const deletingEntry = ref(null);
 const fmt = (v, cur) => new Intl.NumberFormat('en-US', {
   style: 'currency', currency: cur ?? goal.value?.currency ?? 'USD', minimumFractionDigits: 0,
 }).format(v ?? 0);
+
+function formatDeadline(deadline) {
+  if (!deadline) return 'Not set';
+  const normalized = String(deadline).includes('T') ? deadline : `${deadline}T00:00:00`;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return String(deadline);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatDate(date) {
+  if (!date) return '—';
+  const normalized = String(date).includes('T') ? date : `${date}T00:00:00`;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return String(date);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 onMounted(refreshAll);
 

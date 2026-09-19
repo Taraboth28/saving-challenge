@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\JsonStorageService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
@@ -32,7 +33,7 @@ class DashboardController extends Controller
             $totalTarget += $target;
             $totalSaved += $saved;
 
-            if ($saved >= $target) {
+            if ($target > 0 && $saved >= $target) {
                 $completedGoals++;
             }
 
@@ -58,9 +59,9 @@ class DashboardController extends Controller
                 'total_goals' => $totalGoals,
                 'active_goals' => $activeGoals,
                 'completed_goals' => $completedGoals,
-                'total_target' => $totalTarget,
-                'total_saved' => $totalSaved,
-                'total_remaining' => $totalRemaining,
+                'total_target' => round($totalTarget, 2),
+                'total_saved' => round($totalSaved, 2),
+                'total_remaining' => round($totalRemaining, 2),
                 'overall_percent' => $overallPercent,
                 'goal_breakdown' => $goalBreakdown,
                 'monthly_trend' => $trend,
@@ -72,7 +73,7 @@ class DashboardController extends Controller
     {
         $months = [];
         for ($i = 5; $i >= 0; $i--) {
-            $months[] = now()->subMonths($i)->format('Y-m');
+            $months[] = now()->startOfMonth()->subMonthsNoOverflow($i)->format('Y-m');
         }
 
         $trend = [];
@@ -91,10 +92,10 @@ class DashboardController extends Controller
             }
             $trend[] = [
                 'month' => $month,
-                'label' => now()->createFromFormat('Y-m', $month)->format('M Y'),
-                'deposit' => $deposited,
-                'withdrawal' => $withdrawn,
-                'net' => $deposited - $withdrawn,
+                'label' => Carbon::parse("{$month}-01")->format('M Y'),
+                'deposit' => round($deposited, 2),
+                'withdrawal' => round($withdrawn, 2),
+                'net' => round($deposited - $withdrawn, 2),
             ];
         }
 
